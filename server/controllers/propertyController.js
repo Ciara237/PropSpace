@@ -18,7 +18,9 @@ const getAllProperties = async (req, res) => {
     }
   }
 
-  const properties = await Property.find(filter).sort({ createdAt: -1 });
+  const properties = await Property.find(filter)
+    .populate('author', 'username')
+    .sort({ createdAt: -1 });
 
   return res.status(200).json(properties);
 };
