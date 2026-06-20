@@ -295,7 +295,7 @@ export default function CreateListing() {
         )}
       </main>
 
-      <Footer />
+      <Footer className="md:ml-64 md:w-[calc(100%-16rem)]" />
 
       <button
         type="button"

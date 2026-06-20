@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import axiosInstance from '../api/axiosInstance';
 import useAuth from '../hooks/useAuth';
 
-const DEFAULT_AVATAR =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuA8uVCUZGFHNJbuQdR-o2Zp5p2U_EKM0b7q2i_Vp3qh0934-cCzSbg2M-Ff9Yg2m2nwgOPd72Z6A_qVZL_YiuPRjt0UlvrYHBNW8tI4Ktj60JxOJDOy6vgYApH_B6qKUdH-4mbM8f36tb5ZwBmHjt3UbBkLrmWIuVBocuEcXkWFy_zPNL9hs9uNZQtp0St6H2PljMvoxS_d4_xcVsNTRoRM16BLRw2xJ8mzyQ5ElfIrKmj-pSDy36tR';
+const DEFAULT_AVATAR = 'https://placehold.co/100x100?text=Avatar';
 
 function NavItem({ to, icon, label, active }) {
   const className = active
@@ -18,11 +19,35 @@ function NavItem({ to, icon, label, active }) {
 }
 
 export default function Sidebar({ mobileOpen, onClose, userProfile }) {
-  const { logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { pathname } = useLocation();
+  const [currentUser, setCurrentUser] = useState(userProfile || null);
 
-  const displayName = userProfile?.username || 'Member';
-  const avatar = userProfile?.avatar || DEFAULT_AVATAR;
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchCurrentUser() {
+      try {
+        const { data } = await axiosInstance.get('/api/users/me');
+        if (isMounted) {
+          setCurrentUser(data);
+          updateUser(data);
+        }
+      } catch {
+        /* sidebar falls back to auth/default profile data */
+      }
+    }
+
+    fetchCurrentUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [updateUser]);
+
+  const sidebarUser = userProfile || currentUser || user || {};
+  const displayName = sidebarUser.username || 'Member';
+  const avatar = sidebarUser.avatar || DEFAULT_AVATAR;
 
   return (
     <>
@@ -34,13 +59,21 @@ export default function Sidebar({ mobileOpen, onClose, userProfile }) {
         />
       )}
       <aside
-        className={`h-screen w-64 fixed left-0 top-0 z-[56] bg-tertiary-container text-on-tertiary flex flex-col py-6 shadow-xl overflow-y-auto pt-24 transition-transform md:translate-x-0 ${
+        className={`h-screen w-64 fixed left-0 top-0 z-[56] md:z-30 bg-tertiary-container text-on-tertiary flex flex-col py-6 shadow-xl overflow-y-auto pt-24 transition-transform md:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
         <div className="px-6 mb-8 flex items-center gap-3">
           <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-container-highest flex-shrink-0 border border-white/10">
-            <img className="w-full h-full object-cover" src={avatar} alt="" />
+            <img
+              className="w-full h-full object-cover"
+              src={avatar}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = DEFAULT_AVATAR;
+              }}
+              alt={displayName}
+            />
           </div>
           <div className="overflow-hidden">
             <h4 className="font-headline-md text-[16px] font-bold truncate text-on-tertiary">

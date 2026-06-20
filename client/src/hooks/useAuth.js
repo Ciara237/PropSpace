@@ -25,6 +25,10 @@ export function AuthProvider({ children }) {
     setUser(decodeToken(token));
   }, []);
 
+  const updateUser = useCallback((updates) => {
+    setUser((current) => ({ ...(current || {}), ...updates }));
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     setUser(null);
@@ -33,7 +37,7 @@ export function AuthProvider({ children }) {
 
   return createElement(
     AuthContext.Provider,
-    { value: { user, login, logout } },
+    { value: { user, login, logout, updateUser } },
     children
   );
 }

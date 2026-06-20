@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -8,12 +8,15 @@ import {
   Heading,
   Input,
   Loader,
-  Text,
   VStack,
 } from '@chakra-ui/react';
 import axiosInstance from '../api/axiosInstance';
+import useAuth from '../hooks/useAuth';
+
+const DEFAULT_AVATAR = 'https://placehold.co/100x100?text=Avatar';
 
 export default function ProfileSettings() {
+  const { updateUser } = useAuth();
   const [profile, setProfile] = useState({ username: '', phone: '', avatar: '' });
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileSubmitting, setProfileSubmitting] = useState(false);
@@ -30,27 +33,38 @@ export default function ProfileSettings() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
-  const fetchProfile = useCallback(async () => {
-    setProfileLoading(true);
-    setProfileError('');
-
-    try {
-      const { data } = await axiosInstance.get('/api/users/me');
-      setProfile({
-        username: data.username ?? '',
-        phone: data.phone ?? '',
-        avatar: data.avatar ?? '',
-      });
-    } catch (err) {
-      setProfileError(err.response?.data?.message || 'Failed to load profile. Please try again.');
-    } finally {
-      setProfileLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    let isMounted = true;
+
+    async function loadProfile() {
+      try {
+        const { data } = await axiosInstance.get('/api/users/me');
+        if (!isMounted) return;
+
+        const nextProfile = {
+          username: data.username ?? '',
+          phone: data.phone ?? '',
+          avatar: data.avatar ?? '',
+        };
+        setProfile(nextProfile);
+        updateUser(data);
+      } catch (err) {
+        if (!isMounted) return;
+
+        setProfileError(err.response?.data?.message || 'Failed to load profile. Please try again.');
+      } finally {
+        if (isMounted) {
+          setProfileLoading(false);
+        }
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [updateUser]);
 
   const updateProfileField = (field) => (e) => {
     setProfile((prev) => ({ ...prev, [field]: e.target.value }));
@@ -75,11 +89,13 @@ export default function ProfileSettings() {
         phone: profile.phone.trim(),
         avatar: profile.avatar.trim(),
       });
-      setProfile({
+      const nextProfile = {
         username: data.username ?? '',
         phone: data.phone ?? '',
         avatar: data.avatar ?? '',
-      });
+      };
+      setProfile(nextProfile);
+      updateUser(data);
       setProfileSuccess('Profile updated successfully');
     } catch (err) {
       setProfileError(err.response?.data?.message || 'Failed to update profile. Please try again.');
@@ -184,6 +200,17 @@ export default function ProfileSettings() {
 
             <Field.Root>
               <Field.Label>Avatar URL</Field.Label>
+              <img
+                src={profile.avatar || DEFAULT_AVATAR}
+                width="100"
+                height="100"
+                style={{ objectFit: 'cover', borderRadius: '9999px' }}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_AVATAR;
+                }}
+                alt={profile.username || 'Avatar'}
+              />
               <Input
                 type="url"
                 placeholder="https://example.com/avatar.jpg"

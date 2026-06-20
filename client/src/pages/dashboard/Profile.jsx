@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import Sidebar from '../../components/Sidebar';
+import useAuth from '../../hooks/useAuth';
 
-const DEFAULT_AVATAR =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuDe-Tl-fM4XVcSRQAiX7nPrp7dHR6QWUqJQZ-sXvV-nVhUk-b7bXAFe6WSbx2ZLHIC6BmL31WKYrgSxKemjkArF_DJPTbZDCdu2BqvLsUDUI2Pm6aIcVEkG3sMODgR9SlsdCjk2E4_19O1Q0HyeIRBsPZyZsb-7572xWuR-jgGB8Q9ypgrjvq426t4j1_ex6wHcrgv_-992cqHU2yW6iLc0NXK4SUaftyH3Os3Acq5BdQuITvzojpAu';
+const DEFAULT_AVATAR = 'https://placehold.co/100x100?text=Avatar';
 
 function Notification({ type, message, onClose }) {
   const isSuccess = type === 'success';
@@ -53,6 +53,7 @@ function PasswordField({ id, label, value, onChange, error, show, onToggle }) {
 }
 
 export default function Profile() {
+  const { updateUser } = useAuth();
   const [profile, setProfile] = useState({ username: '', phone: '', avatar: '' });
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
@@ -68,28 +69,41 @@ export default function Profile() {
   const [notification, setNotification] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const fetchProfile = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await axiosInstance.get('/api/users/me');
-      setProfile({
-        username: data.username ?? '',
-        phone: data.phone ?? '',
-        avatar: data.avatar ?? '',
-      });
-    } catch (err) {
-      setNotification({
-        type: 'error',
-        message: err.response?.data?.message || 'Failed to load profile. Please try again.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    let isMounted = true;
+
+    async function loadProfile() {
+      try {
+        const { data } = await axiosInstance.get('/api/users/me');
+        if (!isMounted) return;
+
+        const nextProfile = {
+          username: data.username ?? '',
+          phone: data.phone ?? '',
+          avatar: data.avatar ?? '',
+        };
+        setProfile(nextProfile);
+        updateUser(data);
+      } catch (err) {
+        if (!isMounted) return;
+
+        setNotification({
+          type: 'error',
+          message: err.response?.data?.message || 'Failed to load profile. Please try again.',
+        });
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [updateUser]);
 
   const avatarPreview = profile.avatar || DEFAULT_AVATAR;
 
@@ -129,11 +143,13 @@ export default function Profile() {
         phone: profile.phone.trim(),
         avatar: profile.avatar.trim(),
       });
-      setProfile({
+      const nextProfile = {
         username: data.username ?? '',
         phone: data.phone ?? '',
         avatar: data.avatar ?? '',
-      });
+      };
+      setProfile(nextProfile);
+      updateUser(data);
       setNotification({ type: 'success', message: 'Your profile settings have been successfully updated.' });
     } catch (err) {
       setNotification({
@@ -219,7 +235,15 @@ export default function Profile() {
                     <div className="flex flex-col md:flex-row items-center gap-8 pb-8 border-b border-outline-variant/30">
                       <div className="relative w-[120px] h-[120px] group">
                         <div className="w-full h-full rounded-full overflow-hidden border-4 border-surface-container shadow-lg">
-                          <img className="w-full h-full object-cover" src={avatarPreview} alt="" />
+                          <img
+                            className="w-full h-full object-cover"
+                            src={avatarPreview}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = DEFAULT_AVATAR;
+                            }}
+                            alt={profile.username || 'Avatar'}
+                          />
                         </div>
                       </div>
                       <div className="flex-1 space-y-2 text-center md:text-left">
@@ -380,7 +404,7 @@ export default function Profile() {
         )}
       </main>
 
-      <Footer />
+      <Footer className="md:ml-64 md:w-[calc(100%-16rem)]" />
 
       <button
         type="button"

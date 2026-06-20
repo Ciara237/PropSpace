@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 
 const fillIcon = { fontVariationSettings: "'FILL' 1" };
 
-export default function Footer() {
+export default function Footer({ className = '' }) {
   return (
-    <footer className="bg-tertiary-container text-on-tertiary w-full py-20">
+    <footer className={`bg-tertiary-container text-on-tertiary w-full py-20 ${className}`}>
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 md:grid-cols-4 gap-gutter">
         <div className="flex flex-col gap-4">
           <div className="font-headline-md text-headline-md font-bold text-on-tertiary flex items-center gap-2">
@@ -64,7 +64,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mt-20 pt-8 border-t border-on-tertiary/10 text-on-tertiary/40 font-body-md text-center">
-        © 2024 PropSpace Cameroon. All rights reserved.
+        © 2026 PropSpace Cameroon. All rights reserved.
       </div>
     </footer>
   );
