@@ -44,6 +44,14 @@ MONGO_URI=mongodb://localhost:27017/propspace
 JWT_SECRET=your_secret_key_here
 ```
 
+For MongoDB Atlas, use your Atlas connection string as `MONGO_URI` instead of the local example. Keep `server/.env` private and do not commit real credentials.
+
+To verify the MongoDB connection without starting the full API, run this from the `server/` directory:
+
+```bash
+node -e 'require("dotenv").config(); const mongoose = require("mongoose"); mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 }).then((conn) => { console.log("MongoDB connected: " + conn.connection.host + "/" + conn.connection.name); return mongoose.disconnect(); }).catch((err) => { console.error(err.message); process.exit(1); });'
+```
+
 Start the API:
 
 ```bash
