@@ -1,79 +1,70 @@
-import {
-  Badge,
-  Box,
-  Card,
-  Heading,
-  Image,
-  Text,
-  VStack,
-} from '@chakra-ui/react';
-
-function formatPrice(price) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(price);
-}
+const PLACEHOLDER_IMAGE = 'https://placehold.co/400x250?text=No+Image';
 
 function getAuthorName(author) {
   if (author && typeof author === 'object' && author.username) {
     return author.username;
   }
-
   return 'Unknown';
 }
 
-export default function PropertyCard({ property }) {
-  const imageUrl = property.imageUrls?.[0];
+function getInitials(name) {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+export default function PropertyCard({ property, badge }) {
+  const authorName = getAuthorName(property.author);
 
   return (
-    <Card.Root overflow="hidden" height="100%">
-      {imageUrl ? (
-        <Image
-          src={imageUrl}
+    <div className="group bg-surface-container-lowest rounded-xl overflow-hidden border border-outline-variant/10 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+      <div className="relative aspect-[3/2] overflow-hidden">
+        <img
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          src={property.imageUrls?.[0] || PLACEHOLDER_IMAGE}
+          onError={(e) => {
+            e.target.src = PLACEHOLDER_IMAGE;
+          }}
           alt={property.title}
-          height="200px"
-          width="100%"
-          objectFit="cover"
         />
-      ) : (
-        <Box
-          height="200px"
-          bg="gray.100"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Text color="gray.500">No image</Text>
-        </Box>
-      )}
-
-      <Card.Body>
-        <VStack align="stretch" gap={2}>
-          <Heading size="md" lineClamp={1}>
+        {badge && (
+          <div className="absolute top-4 left-4 bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-md shadow-md">
+            {badge}
+          </div>
+        )}
+      </div>
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-2 gap-2">
+          <h3 className="font-headline-md text-headline-md group-hover:text-secondary transition-colors">
             {property.title}
-          </Heading>
-
-          <Text color="gray.600" fontSize="sm">
-            {property.city}, {property.country}
-          </Text>
-
-          <Text fontWeight="bold" fontSize="lg" colorPalette="blue">
-            {formatPrice(property.price)}
-          </Text>
-
-          {property.type && (
-            <Badge colorPalette="gray" width="fit-content">
+          </h3>
+          <div className="text-secondary font-price-display whitespace-nowrap">
+            {property.price.toLocaleString()} XAF
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-on-surface-variant mb-4 font-body-md">
+          <span className="material-symbols-outlined text-[18px]">location_on</span>
+          {property.city}, {property.country}
+        </div>
+        {property.type && (
+          <div className="mb-4">
+            <span className="text-label-md font-label-md whitespace-nowrap px-4 py-2 bg-surface-container rounded-full">
               {property.type}
-            </Badge>
-          )}
-
-          <Text fontSize="sm" color="gray.500">
-            Listed by {getAuthorName(property.author)}
-          </Text>
-        </VStack>
-      </Card.Body>
-    </Card.Root>
+            </span>
+          </div>
+        )}
+        <div className="flex items-center justify-between pt-4 border-t border-outline-variant/10">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center font-bold text-on-secondary-container text-xs">
+              {getInitials(authorName)}
+            </div>
+            <span className="font-label-md text-on-surface">{authorName}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

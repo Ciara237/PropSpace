@@ -1,20 +1,18 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { ChakraProvider, defaultSystem } from '@chakra-ui/react';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './hooks/useAuth';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Properties from './pages/Properties';
-import DashboardLayout from './pages/DashboardLayout';
-import MyListings from './pages/MyListings';
-import ProfileSettings from './pages/ProfileSettings';
+import MyListings from './pages/dashboard/MyListings';
+import CreateListing from './pages/dashboard/CreateListing';
+import Profile from './pages/dashboard/Profile';
 
 export default function App() {
   return (
-    <ChakraProvider value={defaultSystem}>
-      <BrowserRouter>
-        <AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -24,17 +22,44 @@ export default function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <DashboardLayout />
+                <Navigate to="/dashboard/listings" replace />
               </ProtectedRoute>
             }
-          >
-            <Route index element={<Navigate to="listings" replace />} />
-            <Route path="listings" element={<MyListings />} />
-            <Route path="profile" element={<ProfileSettings />} />
-          </Route>
+          />
+          <Route
+            path="/dashboard/listings"
+            element={
+              <ProtectedRoute>
+                <MyListings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/create"
+            element={
+              <ProtectedRoute>
+                <CreateListing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/edit/:id"
+            element={
+              <ProtectedRoute>
+                <CreateListing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </ChakraProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
